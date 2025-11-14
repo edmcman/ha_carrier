@@ -54,13 +54,6 @@ class CarrierDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            # Reset data_flush to True once per day to ensure full data refresh
-            if self.timestamp_all_data is not None:
-                time_since_full_refresh = datetime.now(UTC) - self.timestamp_all_data
-                if time_since_full_refresh.total_seconds() >= 86400:  # 24 hours in seconds
-                    _LOGGER.debug("24 hours since last full refresh, triggering full data refresh")
-                    self.data_flush = True
-
             if self.data_flush:
                 _LOGGER.debug("fetching fresh all data")
                 fresh_systems: list[System] = await self.api_connection.load_data()
