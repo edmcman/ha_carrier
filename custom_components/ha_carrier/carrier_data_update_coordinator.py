@@ -42,7 +42,7 @@ class CarrierDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER,
             name=f"{DOMAIN}-{self.api_connection.username}",
             update_interval=timedelta(minutes=DEFAULT_UPDATE_INTERVAL_MINUTES),
-            always_update=True,
+            always_update=False,
             request_refresh_debouncer=Debouncer(
                 hass,
                 _LOGGER,
@@ -108,6 +108,20 @@ class CarrierDataUpdateCoordinator(DataUpdateCoordinator):
     async def updated_callback(self, _message: str) -> None:
         self.timestamp_websocket = datetime.now(UTC)
         _LOGGER.debug("websocket updated system")
+
+        # Check if we need to update energy data (every 30 minutes)
+        if self.timestamp_energy is None or \
+           (datetime.now(UTC) - self.timestamp_energy).total_seconds() >= DEFAULT_UPDATE_INTERVAL_MINUTES * 60:
+            _LOGGER.debug("fetching energy data via websocket callback")
+            try:
+                for system in self.systems:
+                    energy_response = await self.api_connection.get_energy(system.profile.serial)
+                    energy = Energy(raw=energy_response["infinityEnergy"])
+                    system.energy = energy
+                self.timestamp_energy = datetime.now(UTC)
+            except Exception as error:
+                _LOGGER.exception("Error fetching energy data in websocket callback", exc_info=error)
+
         for system in self.systems:
             _LOGGER.debug(
                 async_redact_data(system.__repr__(), TO_REDACT_MAPPED)
