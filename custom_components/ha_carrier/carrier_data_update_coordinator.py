@@ -42,7 +42,7 @@ class CarrierDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER,
             name=f"{DOMAIN}-{self.api_connection.username}",
             update_interval=timedelta(minutes=DEFAULT_UPDATE_INTERVAL_MINUTES),
-            always_update=False,
+            always_update=True,
             request_refresh_debouncer=Debouncer(
                 hass,
                 _LOGGER,
